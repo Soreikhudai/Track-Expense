@@ -37,7 +37,8 @@ input {
   margin-top: 20px;
 }
 .auth-btn-1 {
-  padding: 8px 117px;
+  width: 100%;
+  padding: 1rem;
   background-color: rgb(52, 52, 229);
   border-radius: 3px;
   border: none;
@@ -47,7 +48,8 @@ input {
   background-color: rgb(1, 1, 197);
 }
 .auth-btn-2 {
-  padding: 8px 65px;
+  width: 100%;
+  padding: 1rem;
   background-color: rgb(162, 223, 203);
   border: 1px solid greenyellow;
 }

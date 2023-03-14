@@ -1,0 +1,11 @@
+.profileHeader {
+  display: flex;
+  align-items: center;
+  height: 8vh;
+  background-color: aliceblue;
+  margin-top: -5px;
+  border-bottom: 3px solid grey;
+}
+h3 {
+  margin-left: 2rem;
+}

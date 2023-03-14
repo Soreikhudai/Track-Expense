@@ -1,32 +1,56 @@
 import { useState, useRef } from "react";
 import Card from "../UI/Card";
 import classes from "./Auth.module.css";
+import { useNavigate } from "react-router-dom";
+//import CartContext from "../../store/cart-context";
+
 const Auth = () => {
+  const navigate = useNavigate();
+
   const emailRef = useRef("");
   const passwordRef = useRef("");
-  const confirmRef = useRef("");
   const [isLogin, setIsLogin] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
 
   const switchAuthModeHandler = () => {
     setIsLogin((prevState) => !prevState);
   };
 
-  const saveDetailsHandler = (event) => {
+  const saveDetailsHandler = async (event) => {
     event.preventDefault();
 
-    const enteredEmail = emailRef.current.value;
-    const enteredPassword = passwordRef.current.value;
-    const enteredConfirmPassword = confirmRef.current.value;
-    if (enteredPassword !== enteredConfirmPassword) {
-      setErrorMessage("password do not match");
-      return;
-    } else {
-      console.log("user has suucessfully sihgned up");
-      setErrorMessage(false);
-    }
+    const details = {
+      email: emailRef.current.value,
+      password: passwordRef.current.value,
+    };
 
-    console.log(enteredEmail);
+    let url;
+    if (isLogin) {
+      url =
+        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDFu8-Vjj_SFNU9d3lO4PE0uqF6xhYUqiU";
+    } else {
+      url =
+        "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDFu8-Vjj_SFNU9d3lO4PE0uqF6xhYUqiU";
+    }
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        body: JSON.stringify(details),
+        returnSecureToken: "true",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("request failed");
+      }
+      const data = await response.json();
+      localStorage.setItem("token", data.idToken);
+      navigate("/profile");
+    } catch (error) {
+      alert("something went wrong");
+      console.error(error);
+    }
   };
   return (
     <Card>
@@ -59,15 +83,6 @@ const Auth = () => {
             <input type="password" required minLength="6" ref={passwordRef} />
           </div>
         </div>
-        <div className={classes.inputContainer}>
-          <div className={classes.labelContainer}>Confirm Password</div>
-          <div>
-            <input type="password" required ref={confirmRef} />
-          </div>
-        </div>
-        {errorMessage && (
-          <div className={classes.errorMessage}>{errorMessage}</div>
-        )}
 
         <div className={classes.submitContainer}>
           <div>
@@ -81,7 +96,9 @@ const Auth = () => {
               onClick={switchAuthModeHandler}
               className={classes["auth-btn-2"]}
             >
-              {isLogin ? "Create new account" : "Have an account? Log in"}
+              {isLogin
+                ? "Don't have an account? Sign up here"
+                : "Have an account with us? Log in here"}
             </button>
           </div>
         </div>
