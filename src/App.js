@@ -1,11 +1,16 @@
+//import { useContext } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import AboutPage from "./pages/AboutPage";
 import ProductsPage from "./pages/ProductsPage";
 import ProfilePage from "./pages/ProfilePage";
+import UpdateProfilePage from "./pages/UpdateProfilePage";
+
+//import CartContext from "./store/cart-context";
 
 const App = () => {
+  //const Data = useContext(CartContext);
   return (
     <>
       <BrowserRouter>
@@ -15,6 +20,7 @@ const App = () => {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/aboutus" element={<AboutPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/updateprofilepage" element={<UpdateProfilePage />} />
         </Routes>
       </BrowserRouter>
     </>

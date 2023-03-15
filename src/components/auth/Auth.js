@@ -1,15 +1,25 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useContext } from "react";
 import Card from "../UI/Card";
 import classes from "./Auth.module.css";
 import { useNavigate } from "react-router-dom";
-//import CartContext from "../../store/cart-context";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import CartContext from "../../store/cart-context";
+import { SoreiApp } from "../../firebase";
 
 const Auth = () => {
+  const auth = getAuth(SoreiApp);
+  const Data = useContext(CartContext);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
 
   const emailRef = useRef("");
   const passwordRef = useRef("");
-  const [isLogin, setIsLogin] = useState(true);
+  const confirmPasswordRef = useRef("");
 
   const switchAuthModeHandler = () => {
     setIsLogin((prevState) => !prevState);
@@ -17,39 +27,42 @@ const Auth = () => {
 
   const saveDetailsHandler = async (event) => {
     event.preventDefault();
+    setIsLoading(true);
 
-    const details = {
-      email: emailRef.current.value,
-      password: passwordRef.current.value,
-    };
+    const email = emailRef.current.value;
+    const password = passwordRef.current.value;
+    const confirmPassword = confirmPasswordRef.current.value;
 
-    let url;
-    if (isLogin) {
-      url =
-        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDFu8-Vjj_SFNU9d3lO4PE0uqF6xhYUqiU";
-    } else {
-      url =
-        "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDFu8-Vjj_SFNU9d3lO4PE0uqF6xhYUqiU";
+    if (password !== confirmPassword) {
+      alert("Passwords do not match. Please try again.");
+      setIsLoading(false);
+      return;
     }
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        body: JSON.stringify(details),
-        returnSecureToken: "true",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
 
-      if (!response.ok) {
-        throw new Error("request failed");
+    try {
+      let userCredential;
+      if (isLogin) {
+        userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+      } else {
+        userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
       }
-      const data = await response.json();
-      localStorage.setItem("token", data.idToken);
+
+      const user = userCredential.user;
+      Data.login(user.accessToken);
+      setIsLoading(false);
       navigate("/profile");
     } catch (error) {
-      alert("something went wrong");
-      console.error(error);
+      alert("Something went wrong. Please try again.");
+
+      setIsLoading(false);
     }
   };
   return (
@@ -83,12 +96,28 @@ const Auth = () => {
             <input type="password" required minLength="6" ref={passwordRef} />
           </div>
         </div>
+        <div className={classes.inputContainer}>
+          <div className={classes.labelContainer}>
+            <label>Confirm Password</label>
+          </div>
+          <div>
+            <input
+              type="password"
+              required
+              minLength="6"
+              ref={confirmPasswordRef}
+            />
+          </div>
+        </div>
 
         <div className={classes.submitContainer}>
           <div>
-            <button className={classes["auth-btn-1"]}>
-              {isLogin ? "Login" : "Sign Up"}
-            </button>
+            {!isLoading && (
+              <button className={classes["auth-btn-1"]}>
+                {isLogin ? "Login" : "Sign Up"}
+              </button>
+            )}
+            {isLoading && <p>sending request....</p>}
           </div>
           <div>
             <button

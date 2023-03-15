@@ -15,4 +15,4 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-export const firebaseApp = initializeApp(firebaseConfig);
+export const SoreiApp = initializeApp(firebaseConfig);

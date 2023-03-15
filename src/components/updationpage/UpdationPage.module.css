@@ -1,0 +1,21 @@
+.updationpage {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 7vh;
+  background-color: aliceblue;
+  margin-top: -5px;
+  border-bottom: 3px solid grey;
+}
+.contactDetails {
+  font-style: italic;
+}
+.updationpageparagraph {
+  font-style: italic;
+}
+.updateProfileForm {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem auto;
+}

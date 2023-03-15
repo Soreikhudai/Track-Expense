@@ -1,6 +1,8 @@
 .profileHeader {
   display: flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
   height: 8vh;
   background-color: aliceblue;
   margin-top: -5px;
@@ -8,4 +10,10 @@
 }
 h3 {
   margin-left: 2rem;
+}
+.headerParagraph {
+  background-color: bisque;
+  border-radius: 5px;
+  padding: 1px 10px;
+  font-style: italic;
 }
