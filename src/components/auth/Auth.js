@@ -6,6 +6,7 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendEmailVerification,
 } from "firebase/auth";
 import CartContext from "../../store/cart-context";
 import { SoreiApp } from "../../firebase";
@@ -15,6 +16,7 @@ const Auth = () => {
   const Data = useContext(CartContext);
   const [isLoading, setIsLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
+
   const navigate = useNavigate();
 
   const emailRef = useRef("");
@@ -56,6 +58,16 @@ const Auth = () => {
       }
 
       const user = userCredential.user;
+
+      if (!user.emailVerified) {
+        await sendEmailVerification(user);
+        alert(
+          "A verification email has been sent to your email. Please verify and login again."
+        );
+        setIsLoading(false);
+        return;
+      }
+
       Data.login(user.accessToken);
       setIsLoading(false);
       navigate("/profile");
@@ -65,6 +77,7 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
   return (
     <Card>
       <div
@@ -84,6 +97,7 @@ const Auth = () => {
           <div className={classes.labelContainer}>
             <label>Email</label>
           </div>
+
           <div>
             <input type="email" required ref={emailRef} />
           </div>

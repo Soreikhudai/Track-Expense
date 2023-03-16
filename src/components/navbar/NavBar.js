@@ -1,10 +1,15 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import classes from "./NavBar.module.css";
 import { useContext } from "react";
 import CartContext from "../../store/cart-context";
 
 const NavBar = () => {
+  const navigate = useNavigate();
   const Data = useContext(CartContext);
+  const logOutHandler = () => {
+    Data.logout(null);
+    navigate("/");
+  };
   return (
     <>
       <div className={classes.navbartop}>
@@ -34,6 +39,11 @@ const NavBar = () => {
               Profile
             </NavLink>
           )}
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <div>
+            {Data.isLoggedin && <button onClick={logOutHandler}>Logout</button>}
+          </div>
         </div>
       </div>
     </>

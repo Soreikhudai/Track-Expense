@@ -7,6 +7,8 @@ import ProductsPage from "./pages/ProductsPage";
 import ProfilePage from "./pages/ProfilePage";
 import UpdateProfilePage from "./pages/UpdateProfilePage";
 
+//import EmailButtonPage from "./pages/EmailButtonPage";
+
 //import CartContext from "./store/cart-context";
 
 const App = () => {

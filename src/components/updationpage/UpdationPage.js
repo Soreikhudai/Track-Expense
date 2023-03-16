@@ -1,13 +1,17 @@
 import classes from "./UpdationPage.module.css";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useContext } from "react";
 import { getAuth, updateProfile } from "firebase/auth";
 import { SoreiApp } from "../../firebase";
+import CartContext from "../../store/cart-context";
+import { useNavigate } from "react-router-dom";
 
 const UpdationPage = () => {
   const fullNameRef = useRef("");
   const photoUrlRef = useRef("");
   const auth = getAuth(SoreiApp);
   const [userData, setUserData] = useState(null);
+  const Data = useContext(CartContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -50,12 +54,17 @@ const UpdationPage = () => {
     }
   };
 
+  const logoutHandler = () => {
+    Data.logout(null);
+    navigate("/");
+  };
   return (
     <>
       <header className={classes.updationpage}>
         <p className={classes.updationpageparagraph}>
           Winners never quit, Quitters never win
         </p>
+        <button onClick={logoutHandler}>Logout</button>
       </header>
       <div
         style={{
