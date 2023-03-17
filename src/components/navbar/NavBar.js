@@ -14,9 +14,11 @@ const NavBar = () => {
     <>
       <div className={classes.navbartop}>
         <div>
-          <NavLink to="/" className={classes["nav-link"]}>
-            <h2>MywebLink</h2>
-          </NavLink>
+          {!Data.isLoggedin && (
+            <NavLink to="/" className={classes["nav-link"]}>
+              <h2>MywebLink</h2>
+            </NavLink>
+          )}
         </div>
         <div>
           <NavLink to="/home" className={classes["nav-link"]}>

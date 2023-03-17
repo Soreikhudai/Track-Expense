@@ -1,7 +1,7 @@
 import { useState, useRef, useContext } from "react";
 import Card from "../UI/Card";
 import classes from "./Auth.module.css";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -72,7 +72,7 @@ const Auth = () => {
       setIsLoading(false);
       navigate("/profile");
     } catch (error) {
-      alert("Something went wrong. Please try again.");
+      alert("login unable, try again");
 
       setIsLoading(false);
     }
@@ -132,6 +132,9 @@ const Auth = () => {
               </button>
             )}
             {isLoading && <p>sending request....</p>}
+          </div>
+          <div>
+            <Link to="/resetpassword">Forgot your passowrd? Click here</Link>
           </div>
           <div>
             <button

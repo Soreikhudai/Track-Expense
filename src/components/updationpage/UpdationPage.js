@@ -39,6 +39,14 @@ const UpdationPage = () => {
     fetchUserData();
   }, [auth.currentUser]);
 
+  // New code to populate the form with user data when the component mounts
+  useEffect(() => {
+    if (userData) {
+      fullNameRef.current.value = userData.displayName || "";
+      photoUrlRef.current.value = userData.photoURL || "";
+    }
+  }, [userData]);
+
   const updateProfileHandler = async (event) => {
     event.preventDefault();
     const userDetails = {
@@ -48,12 +56,19 @@ const UpdationPage = () => {
 
     try {
       await updateProfile(auth.currentUser, userDetails);
-      console.log("User profile updated successfully");
+      await fetch(
+        `https://react-http-project-da8f6-default-rtdb.firebaseio.com/users/${auth.currentUser.uid}.json`,
+        {
+          method: "PUT",
+          body: JSON.stringify(userDetails),
+        }
+      );
+      alert("profile update successfully");
+      navigate("/home");
     } catch (error) {
       console.log(error.message);
     }
   };
-
   const logoutHandler = () => {
     Data.logout(null);
     navigate("/");
@@ -78,7 +93,10 @@ const UpdationPage = () => {
           <h2 className={classes.contactDetails}>Contact Details</h2>
         </div>
       </div>
-      <form className={classes.updateProfileForm}>
+      <form
+        onSubmit={updateProfileHandler}
+        className={classes.updateProfileForm}
+      >
         <div>
           <label>Full Name**</label>
           <input
@@ -97,7 +115,7 @@ const UpdationPage = () => {
         </div>
         <div>
           <div>
-            <button onClick={updateProfileHandler}>Update</button>
+            <button>Update</button>
           </div>
           <div>
             <button>Cancel</button>

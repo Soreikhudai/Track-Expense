@@ -6,6 +6,7 @@ import AboutPage from "./pages/AboutPage";
 import ProductsPage from "./pages/ProductsPage";
 import ProfilePage from "./pages/ProfilePage";
 import UpdateProfilePage from "./pages/UpdateProfilePage";
+import ResetPage from "./pages/ResetPage";
 
 //import EmailButtonPage from "./pages/EmailButtonPage";
 
@@ -23,6 +24,7 @@ const App = () => {
           <Route path="/aboutus" element={<AboutPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/updateprofilepage" element={<UpdateProfilePage />} />
+          <Route path="/resetpassword" element={<ResetPage />} />
         </Routes>
       </BrowserRouter>
     </>
