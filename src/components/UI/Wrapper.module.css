@@ -1,0 +1,16 @@
+.wrapper {
+  margin: 1rem auto;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+  background-color: white;
+  width: 70%;
+}
+
+.wrapper-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 5rem;
+}
