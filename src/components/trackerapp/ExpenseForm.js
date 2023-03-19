@@ -1,23 +1,90 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Wrapper from "../UI/Wrapper";
 import classes from "./ExpenseForm.module.css";
+import { getAuth } from "firebase/auth";
+import { SoreiApp } from "../firebase";
+const firebaseDatabaseUrl =
+  "https://react-http-project-da8f6-default-rtdb.firebaseio.com/expenses.json";
+
 const ExpenseForm = () => {
+  const auth = getAuth(SoreiApp);
   const [detailList, setDetailList] = useState([]);
   const amountRef = useRef("");
   const descriptionRef = useRef("");
   const categoryRef = useRef("");
-  const submitHandler = (event) => {
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!auth.currentUser) {
+          return;
+        }
+
+        // Fetch user data
+        const idToken = await auth.currentUser.getIdToken();
+        const response = await fetch(
+          `https://react-http-project-da8f6-default-rtdb.firebaseio.com/expenses/${auth.currentUser.uid}.json?auth=${idToken}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+        const userData = await response.json();
+        setUserData(userData);
+
+        // Fetch expense details
+        const expensesResponse = await fetch(firebaseDatabaseUrl);
+        if (!expensesResponse.ok) {
+          throw new Error("Failed to fetch expense details");
+        }
+        const expensesData = await expensesResponse.json();
+        const expenses = Object.keys(expensesData).map((key) => {
+          return {
+            id: key,
+            ...expensesData[key],
+          };
+        });
+        setDetailList(expenses);
+      } catch (error) {
+        console.log(error.message);
+      }
+    };
+    fetchData();
+  }, [auth.currentUser]);
+
+  useEffect(() => {
+    if (userData) {
+      amountRef.current.value = userData.amount || "";
+      descriptionRef.current.value = userData.description || "";
+      categoryRef.current.value = userData.category || "";
+    }
+  }, [userData]);
+
+  const submitHandler = async (event) => {
     event.preventDefault();
     const details = {
       amount: amountRef.current.value,
       description: descriptionRef.current.value,
       category: categoryRef.current.value,
     };
-    setDetailList([...detailList, details]);
-    amountRef.current.value = "";
-    descriptionRef.current.value = "";
-    categoryRef.current.value = "";
+    try {
+      const response = await fetch(firebaseDatabaseUrl, {
+        method: "POST",
+        body: JSON.stringify(details),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      await response.json();
+      setDetailList([...detailList, details]);
+      amountRef.current.value = "";
+      descriptionRef.current.value = "";
+      categoryRef.current.value = "";
+    } catch (error) {
+      alert("something went wrong");
+    }
   };
+
   return (
     <>
       <Wrapper>
