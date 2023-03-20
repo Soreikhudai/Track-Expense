@@ -3,16 +3,20 @@ import Wrapper from "../UI/Wrapper";
 import classes from "./ExpenseForm.module.css";
 import { getAuth } from "firebase/auth";
 import { SoreiApp } from "../firebase";
+import { getDatabase, onChildAdded, ref, remove, set } from "firebase/database";
 const firebaseDatabaseUrl =
   "https://react-http-project-da8f6-default-rtdb.firebaseio.com/expenses.json";
 
 const ExpenseForm = () => {
   const auth = getAuth(SoreiApp);
+  const database = getDatabase();
   const [detailList, setDetailList] = useState([]);
   const amountRef = useRef("");
   const descriptionRef = useRef("");
   const categoryRef = useRef("");
   const [userData, setUserData] = useState(null);
+  const [deleted, setDeleted] = useState(false);
+  const [editId, setEditId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,6 +30,7 @@ const ExpenseForm = () => {
         const response = await fetch(
           `https://react-http-project-da8f6-default-rtdb.firebaseio.com/expenses/${auth.currentUser.uid}.json?auth=${idToken}`
         );
+
         if (!response.ok) {
           throw new Error("Failed to fetch user data");
         }
@@ -44,13 +49,17 @@ const ExpenseForm = () => {
             ...expensesData[key],
           };
         });
+        setDeleted(false);
+        // console.log(expenses);
         setDetailList(expenses);
       } catch (error) {
         console.log(error.message);
       }
     };
-    fetchData();
-  }, [auth.currentUser]);
+    setTimeout(() => {
+      fetchData();
+    }, 1000);
+  }, [auth, deleted]);
 
   useEffect(() => {
     if (userData) {
@@ -60,28 +69,86 @@ const ExpenseForm = () => {
     }
   }, [userData]);
 
+  const editHandler = (expenseId) => {
+    const expense = detailList.find((expense) => expense.id === expenseId);
+    amountRef.current.value = expense.amount;
+    descriptionRef.current.value = expense.description;
+    categoryRef.current.value = expense.category;
+    setEditId(expenseId);
+  };
+
   const submitHandler = async (event) => {
     event.preventDefault();
     const details = {
       amount: amountRef.current.value,
       description: descriptionRef.current.value,
       category: categoryRef.current.value,
+      id: Math.random().toString(36).substr(2, 8),
     };
     try {
-      const response = await fetch(firebaseDatabaseUrl, {
-        method: "POST",
-        body: JSON.stringify(details),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      await response.json();
-      setDetailList([...detailList, details]);
-      amountRef.current.value = "";
-      descriptionRef.current.value = "";
-      categoryRef.current.value = "";
+      if (editId) {
+        const expenseRef = ref(database, `expenses/${editId}`);
+        await set(expenseRef, details);
+        const updatedExpenses = detailList.map((expense) =>
+          expense.id === editId ? { ...expense, ...details } : expense
+        );
+        setDetailList(updatedExpenses);
+        setEditId(null);
+
+        // Remove the previous data from Firebase
+        await remove(ref(database, `expenses/${editId}`));
+
+        // Clear input fields
+        amountRef.current.value = "";
+        descriptionRef.current.value = "";
+        categoryRef.current.value = "";
+      } else {
+        const response = await fetch(firebaseDatabaseUrl, {
+          method: "POST",
+          body: JSON.stringify(details),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        await response.json();
+        setDetailList([...detailList, details]);
+
+        // Clear input fields
+        amountRef.current.value = "";
+        descriptionRef.current.value = "";
+        categoryRef.current.value = "";
+      }
     } catch (error) {
       alert("something went wrong");
+    }
+  };
+
+  const deleteHandler = async (expenseId) => {
+    // console.log(expenseId);
+    try {
+      //   console.log(expenseId);
+      const cartRef = ref(database, `/expenses`);
+      onChildAdded(cartRef, (snapshot) => {
+        const item = snapshot.val();
+        if (item.id === expenseId) {
+          // Remove the item from the database
+          const itemRef = ref(database, `/expenses/${snapshot.key}`);
+          remove(itemRef)
+            .then((res) => {
+              setDeleted(true);
+            })
+            .catch((error) => {
+              console.error("Error deleting item: ", error);
+            });
+        }
+      });
+      console.log(detailList);
+      const updatedExpenses = detailList.filter(
+        (expense) => expense.id !== expenseId
+      );
+      setDetailList(updatedExpenses);
+    } catch (error) {
+      console.log(error.message);
     }
   };
 
@@ -180,9 +247,10 @@ const ExpenseForm = () => {
             >
               <td style={{ padding: "1rem" }}>${item.amount}</td>
               <td style={{ padding: "1rem" }}>{item.description}</td>
-              <td style={{ padding: "1rem" }}>${item.category}</td>
+              <td style={{ padding: "1rem" }}>{item.category}</td>
               <td style={{ padding: "1rem" }}>
-                <button>Delete</button>
+                <button onClick={() => editHandler(item.id)}>Edit </button>
+                <button onClick={() => deleteHandler(item.id)}>Delete</button>
               </td>
             </tr>
           ))}
