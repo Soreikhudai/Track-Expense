@@ -1,9 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import Card from "../UI/Card";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
-
 import { useRef } from "react";
-import { SoreiApp } from "../firebase";
+import { SoreiApp } from "../../firebase";
 
 const Reset = () => {
   const auth = getAuth(SoreiApp);

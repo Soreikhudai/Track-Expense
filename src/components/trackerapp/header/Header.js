@@ -1,13 +1,14 @@
-import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import CartContext from "../../../store/cart-context";
 import classes from "./Header.module.css";
+import { useDispatch } from "react-redux";
+import { authActions } from "../../../store/auth";
 
 const Header = () => {
-  const Data = useContext(CartContext);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const logoutHandler = () => {
-    Data.logout(null);
+    dispatch(authActions.logout(false));
+
     navigate("/auth");
   };
   return (

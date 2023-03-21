@@ -2,21 +2,26 @@ import { useRef, useState, useEffect } from "react";
 import Wrapper from "../UI/Wrapper";
 import classes from "./ExpenseForm.module.css";
 import { getAuth } from "firebase/auth";
-import { SoreiApp } from "../firebase";
+import { SoreiApp } from "../../firebase";
 import { getDatabase, onChildAdded, ref, remove, set } from "firebase/database";
+import { useDispatch } from "react-redux";
+import { setExpenses } from "../../store/expense";
+import { useSelector } from "react-redux";
+
 const firebaseDatabaseUrl =
   "https://react-http-project-da8f6-default-rtdb.firebaseio.com/expenses.json";
 
 const ExpenseForm = () => {
+  const dispatch = useDispatch();
   const auth = getAuth(SoreiApp);
   const database = getDatabase();
-  const [detailList, setDetailList] = useState([]);
   const amountRef = useRef("");
   const descriptionRef = useRef("");
   const categoryRef = useRef("");
   const [userData, setUserData] = useState(null);
   const [deleted, setDeleted] = useState(false);
   const [editId, setEditId] = useState(null);
+  const expenses = useSelector((state) => state.expense.expenses);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,8 +55,7 @@ const ExpenseForm = () => {
           };
         });
         setDeleted(false);
-        // console.log(expenses);
-        setDetailList(expenses);
+        dispatch(setExpenses(expenses));
       } catch (error) {
         console.log(error.message);
       }
@@ -59,7 +63,7 @@ const ExpenseForm = () => {
     setTimeout(() => {
       fetchData();
     }, 1000);
-  }, [auth, deleted]);
+  }, [auth, deleted, dispatch]);
 
   useEffect(() => {
     if (userData) {
@@ -68,14 +72,6 @@ const ExpenseForm = () => {
       categoryRef.current.value = userData.category || "";
     }
   }, [userData]);
-
-  const editHandler = (expenseId) => {
-    const expense = detailList.find((expense) => expense.id === expenseId);
-    amountRef.current.value = expense.amount;
-    descriptionRef.current.value = expense.description;
-    categoryRef.current.value = expense.category;
-    setEditId(expenseId);
-  };
 
   const submitHandler = async (event) => {
     event.preventDefault();
@@ -89,14 +85,12 @@ const ExpenseForm = () => {
       if (editId) {
         const expenseRef = ref(database, `expenses/${editId}`);
         await set(expenseRef, details);
-        const updatedExpenses = detailList.map((expense) =>
+        const updatedExpenses = expenses.map((expense) =>
           expense.id === editId ? { ...expense, ...details } : expense
         );
-        setDetailList(updatedExpenses);
+        deleteHandler(editId);
+        dispatch(setExpenses(updatedExpenses));
         setEditId(null);
-
-        // Remove the previous data from Firebase
-        await remove(ref(database, `expenses/${editId}`));
 
         // Clear input fields
         amountRef.current.value = "";
@@ -111,7 +105,7 @@ const ExpenseForm = () => {
           },
         });
         await response.json();
-        setDetailList([...detailList, details]);
+        dispatch(setExpenses([...expenses, details]));
 
         // Clear input fields
         amountRef.current.value = "";
@@ -124,9 +118,7 @@ const ExpenseForm = () => {
   };
 
   const deleteHandler = async (expenseId) => {
-    // console.log(expenseId);
     try {
-      //   console.log(expenseId);
       const cartRef = ref(database, `/expenses`);
       onChildAdded(cartRef, (snapshot) => {
         const item = snapshot.val();
@@ -142,15 +134,29 @@ const ExpenseForm = () => {
             });
         }
       });
-      console.log(detailList);
-      const updatedExpenses = detailList.filter(
+
+      const updatedExpenses = expenses.filter(
         (expense) => expense.id !== expenseId
       );
-      setDetailList(updatedExpenses);
+      dispatch(setExpenses(updatedExpenses));
     } catch (error) {
       console.log(error.message);
     }
   };
+
+  const editHandler = (expenseId) => {
+    const expense = expenses.find((expense) => expense.id === expenseId);
+    amountRef.current.value = expense.amount;
+    descriptionRef.current.value = expense.description;
+    categoryRef.current.value = expense.category;
+    setEditId(expenseId);
+  };
+  console.log(expenses);
+
+  const totalPrice = expenses?.reduce(
+    (acc, curr) => acc + Number(curr.amount),
+    0
+  );
 
   return (
     <>
@@ -189,6 +195,17 @@ const ExpenseForm = () => {
           </div>
         </form>
       </Wrapper>
+      <div className={classes.activatePremium}>
+        <div>
+          <h2 className={classes["total-sum"]}>${totalPrice}</h2>
+        </div>
+        <div>
+          {totalPrice > 1000 && (
+            <button className={classes.toatalButton}>Activate Premium</button>
+          )}
+        </div>
+      </div>
+
       <table
         style={{
           width: "70%",
@@ -240,7 +257,7 @@ const ExpenseForm = () => {
           </tr>
         </thead>
         <tbody>
-          {detailList.map((item, index) => (
+          {expenses?.map((item, index) => (
             <tr
               key={index}
               style={{ textAlign: "center", borderBottom: "1px solid green" }}

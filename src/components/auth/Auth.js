@@ -1,6 +1,10 @@
-import { useState, useRef, useContext } from "react";
+import { useState, useRef } from "react";
 import classes from "./Auth.module.css";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { authActions } from "../../store/auth";
+import Card from "../UI/Card";
+import { SoreiApp } from "../../firebase";
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -8,16 +12,14 @@ import {
   sendEmailVerification,
 } from "firebase/auth";
 
-import Card from "../UI/Card";
-import CartContext from "../../store/cart-context";
-import { SoreiApp } from "../firebase";
+//----------------------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------//
 
 const Auth = () => {
   const auth = getAuth(SoreiApp);
-  const Data = useContext(CartContext);
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-
   const navigate = useNavigate();
 
   const emailRef = useRef("");
@@ -27,6 +29,8 @@ const Auth = () => {
   const switchAuthModeHandler = () => {
     setIsLogin((prevState) => !prevState);
   };
+
+  //----------------------------------------------------------------------------------------------------------------------------------------------
 
   const saveDetailsHandler = async (event) => {
     event.preventDefault();
@@ -68,8 +72,13 @@ const Auth = () => {
         setIsLoading(false);
         return;
       }
+      dispatch(
+        authActions.login({
+          token: userCredential.accessToken,
+          userId: userCredential.user.uid,
+        })
+      );
 
-      Data.login(user.accessToken);
       setIsLoading(false);
       navigate("/main");
     } catch (error) {
@@ -78,6 +87,9 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
+  //----------------------------------------------------------------------------------------------------------------------------------
+  //---------------------------------------------------------------------------------------------------------------------------------
 
   return (
     <Card>
@@ -111,6 +123,7 @@ const Auth = () => {
             <input type="password" required minLength="6" ref={passwordRef} />
           </div>
         </div>
+
         <div className={classes.inputContainer}>
           <div className={classes.labelContainer}>
             <label>Confirm Password</label>
