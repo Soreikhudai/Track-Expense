@@ -18,6 +18,8 @@ const ExpenseForm = () => {
   const amountRef = useRef("");
   const descriptionRef = useRef("");
   const categoryRef = useRef("");
+
+  // const [switchTheme, setSwitchTheme] = useState(false);
   const [userData, setUserData] = useState(null);
   const [deleted, setDeleted] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -158,6 +160,24 @@ const ExpenseForm = () => {
     0
   );
 
+  const downloadHandler = () => {
+    downloadCsv(expenses);
+  };
+  const downloadCsv = (expenses) => {
+    const csv =
+      "data:text/csv;charset=utf-8," +
+      "Amount,Description,Category\n" +
+      expenses
+        .map((e) => `${e.amount},${e.description},${e.category}`)
+        .join("\n");
+
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csv));
+    link.setAttribute("download", "expenses.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   return (
     <>
       <Wrapper>
@@ -204,8 +224,10 @@ const ExpenseForm = () => {
             <button className={classes.toatalButton}>Activate Premium</button>
           )}
         </div>
+        <div>
+          <button onClick={downloadHandler}>Download File</button>
+        </div>
       </div>
-
       <table
         style={{
           width: "70%",
