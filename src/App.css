@@ -55,9 +55,25 @@ body.dark {
   color: #f8f8f8;
 }
 
+input.dark {
+  background-color: #000;
+}
 h1.dark {
   color: #fff;
 }
-label.dark {
+.dark label {
   color: #fff;
+}
+.dark input {
+  background-color: #000;
+  color: #fff;
+}
+.dark select {
+  background-color: #000;
+  color: white;
+}
+.dark button {
+  background-color: #000;
+  color: #fff;
+  border: 1px solid rgba(130, 130, 130, 0.744);
 }

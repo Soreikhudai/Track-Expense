@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import Wrapper from "../UI/Wrapper";
 import classes from "./ExpenseForm.module.css";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { SoreiApp } from "../../firebase";
 import { getDatabase, onChildAdded, ref, remove, set } from "firebase/database";
 import { useDispatch } from "react-redux";
@@ -9,8 +9,9 @@ import { setExpenses } from "../../store/expense";
 import { useSelector } from "react-redux";
 
 const firebaseDatabaseUrl =
-  "https://react-http-project-da8f6-default-rtdb.firebaseio.com/expenses.json";
-
+  "https://react-http-project-da8f6-default-rtdb.firebaseio.com/expenses/";
+var dataArray = [];
+Object.preventExtensions(dataArray);
 const ExpenseForm = () => {
   const dispatch = useDispatch();
   const auth = getAuth(SoreiApp);
@@ -20,7 +21,6 @@ const ExpenseForm = () => {
   const categoryRef = useRef("");
 
   // const [switchTheme, setSwitchTheme] = useState(false);
-  const [userData, setUserData] = useState(null);
   const [deleted, setDeleted] = useState(false);
   const [editId, setEditId] = useState(null);
   const expenses = useSelector((state) => state.expense.expenses);
@@ -31,33 +31,25 @@ const ExpenseForm = () => {
         if (!auth.currentUser) {
           return;
         }
+        return onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            dataArray = [];
 
-        // Fetch user data
-        const idToken = await auth.currentUser.getIdToken();
-        const response = await fetch(
-          `https://react-http-project-da8f6-default-rtdb.firebaseio.com/expenses/${auth.currentUser.uid}.json?auth=${idToken}`
-        );
+            onChildAdded(
+              ref(
+                database,
+                `expenses/${user.email.replace("@", "").replace(".", "")}`
+              ),
+              (snapshot) => {
+                const data = snapshot.val();
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
-        const userData = await response.json();
-        setUserData(userData);
+                dataArray = dataArray.concat({ id: snapshot.key, ...data });
 
-        // Fetch expense details
-        const expensesResponse = await fetch(firebaseDatabaseUrl);
-        if (!expensesResponse.ok) {
-          throw new Error("Failed to fetch expense details");
-        }
-        const expensesData = await expensesResponse.json();
-        const expenses = Object.keys(expensesData).map((key) => {
-          return {
-            id: key,
-            ...expensesData[key],
-          };
+                dispatch(setExpenses(dataArray));
+              }
+            );
+          }
         });
-        setDeleted(false);
-        dispatch(setExpenses(expenses));
       } catch (error) {
         console.log(error.message);
       }
@@ -65,15 +57,7 @@ const ExpenseForm = () => {
     setTimeout(() => {
       fetchData();
     }, 1000);
-  }, [auth, deleted, dispatch]);
-
-  useEffect(() => {
-    if (userData) {
-      amountRef.current.value = userData.amount || "";
-      descriptionRef.current.value = userData.description || "";
-      categoryRef.current.value = userData.category || "";
-    }
-  }, [userData]);
+  }, [auth, deleted, dispatch, database]);
 
   const submitHandler = async (event) => {
     event.preventDefault();
@@ -85,12 +69,33 @@ const ExpenseForm = () => {
     };
     try {
       if (editId) {
-        const expenseRef = ref(database, `expenses/${editId}`);
-        await set(expenseRef, details);
+        const cartRef = ref(
+          database,
+          `expenses/${auth.currentUser.email.replace("@", "").replace(".", "")}`
+        );
+        onChildAdded(cartRef, (snapshot) => {
+          const item = snapshot.val();
+          if (item.id === editId) {
+            // Updating  the item in the database
+            const itemRef = ref(
+              database,
+              `/expenses/${auth.currentUser.email
+                .replace("@", "")
+                .replace(".", "")}/${snapshot.key}`
+            );
+            set(itemRef, details)
+              .then(() => {
+                setDeleted(true);
+              })
+              .catch((error) => {
+                console.error("Error updating item: ", error);
+              });
+          }
+        });
+
         const updatedExpenses = expenses.map((expense) =>
           expense.id === editId ? { ...expense, ...details } : expense
         );
-        deleteHandler(editId);
         dispatch(setExpenses(updatedExpenses));
         setEditId(null);
 
@@ -99,13 +104,18 @@ const ExpenseForm = () => {
         descriptionRef.current.value = "";
         categoryRef.current.value = "";
       } else {
-        const response = await fetch(firebaseDatabaseUrl, {
-          method: "POST",
-          body: JSON.stringify(details),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await fetch(
+          firebaseDatabaseUrl +
+            auth.currentUser.email.replace("@", "").replace(".", "") +
+            ".json",
+          {
+            method: "POST",
+            body: JSON.stringify(details),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
         await response.json();
         dispatch(setExpenses([...expenses, details]));
 
@@ -121,14 +131,22 @@ const ExpenseForm = () => {
 
   const deleteHandler = async (expenseId) => {
     try {
-      const cartRef = ref(database, `/expenses`);
+      const cartRef = ref(
+        database,
+        `/expenses/${auth.currentUser.email.replace("@", "").replace(".", "")}`
+      );
       onChildAdded(cartRef, (snapshot) => {
         const item = snapshot.val();
         if (item.id === expenseId) {
           // Remove the item from the database
-          const itemRef = ref(database, `/expenses/${snapshot.key}`);
+          const itemRef = ref(
+            database,
+            `/expenses/${auth.currentUser.email
+              .replace("@", "")
+              .replace(".", "")}/${snapshot.key}`
+          );
           remove(itemRef)
-            .then((res) => {
+            .then(() => {
               setDeleted(true);
             })
             .catch((error) => {
@@ -153,15 +171,21 @@ const ExpenseForm = () => {
     categoryRef.current.value = expense.category;
     setEditId(expenseId);
   };
-  console.log(expenses);
-
   const totalPrice = expenses?.reduce(
     (acc, curr) => acc + Number(curr.amount),
     0
   );
 
   const downloadHandler = () => {
-    downloadCsv(expenses);
+    downloadCsv(
+      expenses?.filter(
+        (ele, ind) =>
+          ind ===
+          expenses.findIndex(
+            (elem) => elem.jobid === ele.jobid && elem.id === ele.id
+          )
+      )
+    );
   };
   const downloadCsv = (expenses) => {
     const csv =
@@ -279,20 +303,28 @@ const ExpenseForm = () => {
           </tr>
         </thead>
         <tbody>
-          {expenses?.map((item, index) => (
-            <tr
-              key={index}
-              style={{ textAlign: "center", borderBottom: "1px solid green" }}
-            >
-              <td style={{ padding: "1rem" }}>${item.amount}</td>
-              <td style={{ padding: "1rem" }}>{item.description}</td>
-              <td style={{ padding: "1rem" }}>{item.category}</td>
-              <td style={{ padding: "1rem" }}>
-                <button onClick={() => editHandler(item.id)}>Edit </button>
-                <button onClick={() => deleteHandler(item.id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
+          {expenses
+            ?.filter(
+              (ele, ind) =>
+                ind ===
+                expenses.findIndex(
+                  (elem) => elem.jobid === ele.jobid && elem.id === ele.id
+                )
+            )
+            .map((item, index) => (
+              <tr
+                key={index}
+                style={{ textAlign: "center", borderBottom: "1px solid green" }}
+              >
+                <td style={{ padding: "1rem" }}>${item.amount}</td>
+                <td style={{ padding: "1rem" }}>{item.description}</td>
+                <td style={{ padding: "1rem" }}>{item.category}</td>
+                <td style={{ padding: "1rem" }}>
+                  <button onClick={() => editHandler(item.id)}>Edit </button>
+                  <button onClick={() => deleteHandler(item.id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </>

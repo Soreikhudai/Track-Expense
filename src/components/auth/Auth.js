@@ -38,9 +38,9 @@ const Auth = () => {
 
     const email = emailRef.current.value;
     const password = passwordRef.current.value;
-    const confirmPassword = confirmPasswordRef.current.value;
+    const confirmPassword = !isLogin && confirmPasswordRef.current.value;
 
-    if (password !== confirmPassword) {
+    if (!isLogin && password !== confirmPassword) {
       alert("Passwords do not match. Please try again.");
       setIsLoading(false);
       return;
@@ -124,19 +124,21 @@ const Auth = () => {
           </div>
         </div>
 
-        <div className={classes.inputContainer}>
-          <div className={classes.labelContainer}>
-            <label>Confirm Password</label>
+        {!isLogin && (
+          <div className={classes.inputContainer}>
+            <div className={classes.labelContainer}>
+              <label>Confirm Password</label>
+            </div>
+            <div>
+              <input
+                type="password"
+                required
+                minLength="6"
+                ref={confirmPasswordRef}
+              />
+            </div>
           </div>
-          <div>
-            <input
-              type="password"
-              required
-              minLength="6"
-              ref={confirmPasswordRef}
-            />
-          </div>
-        </div>
+        )}
 
         <div className={classes.submitContainer}>
           <div>
